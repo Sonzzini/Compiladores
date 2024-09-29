@@ -7,39 +7,56 @@
 
 enum TOKEN {
     // Palavras reservadas
-    TOKEN_PROGRAM,
-    TOKEN_BEGIN,
-    TOKEN_AND,
-    TOKEN_BOOLEAN,
-    TOKEN_ELIF,
-    TOKEN_END,
-    TOKEN_FALSE,
-    TOKEN_FOR,
-    TOKEN_IF,
-    TOKEN_INTEGER,
-    TOKEN_NOT,
-    TOKEN_OF,
-    TOKEN_OR,
-    TOKEN_READ,
-    TOKEN_SET,
-    TOKEN_TO,
-    TOKEN_TRUE,
-    TOKEN_WRITE,
+    TOKEN_PROGRAM = 0,
+    TOKEN_BEGIN = 1,
+    TOKEN_AND = 2,
+    TOKEN_BOOLEAN = 3,
+    TOKEN_ELIF = 4,
+    TOKEN_END = 5,
+    TOKEN_FALSE = 6,
+    TOKEN_FOR = 7,
+    TOKEN_IF = 8,
+    TOKEN_INTEGER = 9,
+    TOKEN_NOT = 10,
+    TOKEN_OF = 11,
+    TOKEN_OR = 12,
+    TOKEN_READ = 13,
+    TOKEN_SET = 14,
+    TOKEN_TO = 15,
+    TOKEN_TRUE = 16,
+    TOKEN_WRITE = 17,
 
     // pontuadores
-    TOKEN_ABRE_PARENTESES,
-    TOKEN_FECHA_PARENTESES,
+    TOKEN_ABRE_PARENTESES = 18,
+    TOKEN_FECHA_PARENTESES = 19,
 
+    // operadores
+    TOKEN_MAIOR = 20,
+    TOKEN_MENOR = 21,
+    TOKEN_MULT = 22,
+    TOKEN_DIV = 23,
+    TOKEN_ADD = 24,
+    TOKEN_MENOS = 25,
 
     // uuuhhhh
-    TOKEN_IDENTIFICADOR,
+    TOKEN_IDENTIFICADOR = 26,
 
     // comentários
-    TOKEN_COMENTARIO,
+    TOKEN_COMENTARIO = 27,
 
     TOKEN_ERRO = -1
 };
 
+
+enum ERRO_COMPILADOR {
+    NORMAL = 0,
+
+    ERRO_NAO_FECHOU_PARENTESES = 1,
+
+    ERRO_GENERICO = -1,
+};
+
+// Não está sendo utilizada
 struct Token {
     enum TOKEN token;
 
@@ -53,55 +70,70 @@ enum TOKEN tokens[100][100] = {0};
 int posicoes_em_tokens[100] = {0};
 int linha = 1;
 
+enum ERRO_COMPILADOR estado_compilador = NORMAL;
+
 
 const char* token_para_string(enum TOKEN token) {
     switch (token) {
         case TOKEN_ERRO:
-            return "TOKEN_ERRO";
+            return "ERRO";
         case TOKEN_PROGRAM:
-            return "TOKEN_PROGRAM";
+            return "PROGRAM";
         case TOKEN_BEGIN:
-            return "TOKEN_BEGIN";
+            return "BEGIN";
         case TOKEN_AND:
-            return "TOKEN_AND";
+            return "AND";
         case TOKEN_BOOLEAN:
-            return "TOKEN_BOOLEAN";
+            return "BOOLEAN";
         case TOKEN_ELIF:
-            return "TOKEN_ELIF";
+            return "ELIF";
         case TOKEN_END:
-            return "TOKEN_END";
+            return "END";
         case TOKEN_FALSE:
-            return "TOKEN_FALSE";
+            return "FALSE";
         case TOKEN_FOR:
-            return "TOKEN_FOR";
+            return "FOR";
         case TOKEN_IF:
-            return "TOKEN_IF";
+            return "IF";
         case TOKEN_INTEGER:
-            return "TOKEN_INTEGER";
+            return "INTEGER";
         case TOKEN_NOT:
-            return "TOKEN_NOT";
+            return "NOT";
         case TOKEN_OF:
-            return "TOKEN_OF";
+            return "OF";
         case TOKEN_OR:
-            return "TOKEN_OR";
+            return "OR";
         case TOKEN_READ:
-            return "TOKEN_READ";
+            return "READ";
         case TOKEN_SET:
-            return "TOKEN_SET";
+            return "SET";
         case TOKEN_TO:
-            return "TOKEN_TO";
+            return "TO";
         case TOKEN_TRUE:
-            return "TOKEN_TRUE";
+            return "TRUE";
         case TOKEN_WRITE:
-            return "TOKEN_WRITE";
+            return "WRITE";
         case TOKEN_IDENTIFICADOR:
-            return "TOKEN_IDENTIFICADOR";
+            return "IDENTIFICADOR";
         case TOKEN_ABRE_PARENTESES:
-            return "TOKEN_ABRE_PARENTESES";
+            return "ABRE_PARENTESES";
         case TOKEN_FECHA_PARENTESES:
-            return "TOKEN_FECHA_PARENTESES";
+            return "FECHA_PARENTESES";
         case TOKEN_COMENTARIO:
-            return "TOKEN_COMENTARIO";
+            return "COMENTARIO";
+        case TOKEN_MAIOR:
+            return "MAIOR";
+        case TOKEN_MENOR:
+            return "MENOR";
+        case TOKEN_MULT:
+            return "MULT";
+        case TOKEN_DIV:
+            return "DIV";
+        case TOKEN_ADD:
+            return "ADD";
+        case TOKEN_MENOS:
+            return "MENOS";
+
         default:
             printf("token_num: %d", token);
             return "Nao reconhecido";
@@ -113,6 +145,7 @@ void emptyBuffer() {
         buffer[i] = '\0';
     }
     posicao_atual = 0;
+    printf("----------- ESVAZIANDO BUFFER -----------\n");
 }
 
 void printBuffer() {
@@ -194,6 +227,18 @@ enum TOKEN recognize_token(const char *str) {
         return TOKEN_TRUE;
     } else if (strcmp(str, "write") == 0) {
         return TOKEN_WRITE;
+    } else if (strcmp(str, ">") == 0) {
+        return TOKEN_MAIOR;
+    } else if (strcmp(str, "<") == 0) {
+        return TOKEN_MENOR;
+    } else if (strcmp(str, "+") == 0) {
+        return TOKEN_ADD;
+    } else if (strcmp(str, "-") == 0) {
+        return TOKEN_MENOS;
+    } else if (strcmp(str, "*") == 0) {
+        return TOKEN_MULT;
+    } else if (strcmp(str, "/") == 0) {
+        return TOKEN_DIV;
     }
 
     // TODO: Verificação de identificadores
@@ -206,33 +251,63 @@ enum TOKEN recognize_token(const char *str) {
     }
 }
 
+void check_compiler_state() {
+    switch (estado_compilador) {
+    case NORMAL:
+        break;
+    case ERRO_NAO_FECHOU_PARENTESES:
+        printf("Erro na linha %d: ')' esperado", linha);
+        exit(1);
+    case ERRO_GENERICO:
+        printf("Erro generico encontrado, encerrando o programa...");
+        exit(1);
+    default:
+        printf("Não faço ideia kkkkkkk");
+        exit(1);
+    }
+}
+
 
 void eatNextChar(const char c, FILE *arquivo) {
     static int inside_multiline_comment = 0;
 
-    if ((c == ' ' || c == ';' || c == '\n' || c == '(' || c == ')' || c == '[' || c == ']' || c == '.') && (posicao_atual != 0)) { // TODO: Gerar token de chaves/colchetes
+    int can_go_into_buffer = 1;  // usado no '{' dos comentários e no ',' rs
+
+    /*
+        Todos esses 'c == X' são os caracteres que eu estou utilizando como delimitadores de palavra -> recognize_token(buffer)
+        Eles estão sendo checados depois
+    */
+    if ((c == ' ' || c == ';' || c == '\n' || c == '(' || c == ')' || c == '[' || c == ']' || c == '.' || c == ',' || c == ':') && (posicao_atual != 0)) {
         enum TOKEN token = recognize_token(buffer);
+        if (token == -1) { // token_erro
+            printf("Erro encontrado na linha %d", linha);
+            // Parar o programa
+            check_compiler_state();
+            exit(1);
+        }
         printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
-        // printf("%d", posicoes_em_tokens);
         emptyBuffer();
     }
     if (c == '(') {
         enum TOKEN token = TOKEN_ABRE_PARENTESES;
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
+        printf("Token na linha %d: %s\n", linha, token_para_string(token));
         emptyBuffer();
+        estado_compilador = ERRO_NAO_FECHOU_PARENTESES; // vai para estado de erro até encontrar outro parênteses
     }
     if (c == ')') {
         enum TOKEN token = TOKEN_FECHA_PARENTESES;
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
+        printf("Token na linha %d: %s\n", linha, token_para_string(token));
         emptyBuffer();
     }
 
     if (c == '#') {
-        while((fgetc(arquivo)) != '\n'); 
+        while ((fgetc(arquivo)) != '\n'); 
         enum TOKEN token = TOKEN_COMENTARIO;
         printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
@@ -241,21 +316,47 @@ void eatNextChar(const char c, FILE *arquivo) {
         return;  // Interrompe o processamento para esta linha
     }
 
+    if (c == ',' || c == ':') {
+        can_go_into_buffer = 0;
+    }
+
     if (c == '{') {
+
         char next_char = fgetc(arquivo);
+
         if (next_char == '-') {
+
             inside_multiline_comment = 1;
+            emptyBuffer();
+            can_go_into_buffer = 0;
 
-            while(inside_multiline_comment) {
+            while (inside_multiline_comment) {
 
-                while((fgetc(arquivo)) != '\n') {
-                    enum TOKEN token = TOKEN_COMENTARIO;
-                    printf("Token na linha %d: %s\n", linha, token_para_string(token));
-                    tokens[linha][posicoes_em_tokens[linha]] = token;
-                    posicoes_em_tokens[linha]++;
-                    linha++;  // Passa para a próxima linha
-                    return;  // Interrompe o processamento para esta linha
+                next_char = fgetc(arquivo);
+
+                while (next_char != '\n' || next_char != '-') {
+                    if (next_char == '-') {
+                        if ((fgetc(arquivo)) != '}') {
+                            inside_multiline_comment = 0;
+                            enum TOKEN token = TOKEN_COMENTARIO;
+                            printf("Token na linha %d: %s\n", linha, token_para_string(token));
+                            tokens[linha][posicoes_em_tokens[linha]] = token;
+                            posicoes_em_tokens[linha]++;
+                            linha++;  // Passa para a próxima linha
+                            break;
+                        } else {
+                            ungetc(next_char, arquivo);
+                        }
+                    } else if (next_char == '\n') {
+                        enum TOKEN token = TOKEN_COMENTARIO;
+                        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+                        tokens[linha][posicoes_em_tokens[linha]] = token;
+                        posicoes_em_tokens[linha]++;
+                        linha++;  // Passa para a próxima linha
+                    }
+                    next_char = fgetc(arquivo);
                 }
+
                 // te amo laura <3
             }
 
@@ -265,9 +366,13 @@ void eatNextChar(const char c, FILE *arquivo) {
     }
 
     if (c == '\n') {
+        check_compiler_state(); // ------------> ERRADO, ISSO É TRABALHO DO SINTÁTICO, VER LISTA DE TOKENS GERADOS
         linha++;
     }
-    if (posicao_atual < BUFFER_SIZE && c != ' ' && c != ';' && c != '\n') {
+
+    
+
+    if (posicao_atual < BUFFER_SIZE && c != ' ' && c != ';' && c != '\n' && c != '(' && c != ')' && can_go_into_buffer) {
         buffer[posicao_atual++] = c;
     }
 }
@@ -294,6 +399,7 @@ int main(int argc, char *argv[]) {
     while ((caractere = fgetc(arquivo)) != EOF) {
 
         eatNextChar(caractere, arquivo);
+
         printBufferAsArray();
 
 
