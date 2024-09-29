@@ -1,0 +1,6 @@
+program exemplo1;  # Este é um comentário de uma linha
+begin
+{- Este é um comentário de múltiplas linhas
+   que pode continuar até o fechamento -}
+write(maior
+end.
