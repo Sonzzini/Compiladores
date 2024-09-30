@@ -1,3 +1,13 @@
+/*
+Compiladores - Projeto 1
+Professor Fabio Lubacheski 
+
+Alunos :
+Laura C. Balbachan dos Santos | 10390823
+Paulo Sonzzini Ribeiro de Souza | 10322918
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

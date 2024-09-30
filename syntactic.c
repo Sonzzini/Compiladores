@@ -1,3 +1,13 @@
+/*
+Compiladores - Projeto 1
+Professor Fabio Lubacheski 
+
+Alunos :
+Laura C. Balbachan dos Santos | 10390823
+Paulo Sonzzini Ribeiro de Souza | 10322918
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -46,7 +56,7 @@ void programa() {
     consome(TOKEN_IDENTIFICADOR);
     consome(TOKEN_PONTO_VIRGULA);
     bloco();
-    consome(TOKEN_PONTO);
+    consome(TOKEN_END);
 }
 
 void bloco() {
@@ -96,9 +106,10 @@ void comando() {
     }
     if (lookahead == TOKEN_SET) {
         comando_atribuicao();
+        consome(TOKEN_PONTO_VIRGULA);
         return;
     }
-    if (lookahead == TOKEN_IF) {
+    if (lookahead == TOKEN_IF || lookahead == TOKEN_ELIF) {
         comando_condicional();
         return;
     }
@@ -111,7 +122,6 @@ void comando() {
         return;
     }
     else {
-        printf("CAIU NO ELSE\n");
         comando_composto();
         return;
     }
@@ -125,7 +135,12 @@ void comando_atribuicao() {
 }
 
 void comando_condicional() {
-    consome(TOKEN_IF);
+    if (lookahead == TOKEN_IF){ 
+        consome(TOKEN_IF);
+    } else if (lookahead == TOKEN_ELIF) {
+        consome(TOKEN_ELIF);
+    }
+    
     expressao();
     consome(TOKEN_DOIS_PONTOS);
     comando();
@@ -225,9 +240,10 @@ void fator() {
         consome(lookahead);
     } 
     else if(lookahead == TOKEN_NOT) { //?????? isso parece estar muito errado 
+        consome(TOKEN_NOT);
         fator();
     }
-    else {
+    else if (lookahead == TOKEN_ABRE_PARENTESES) {
         consome(TOKEN_ABRE_PARENTESES);
         expressao();
         consome(TOKEN_FECHA_PARENTESES);
