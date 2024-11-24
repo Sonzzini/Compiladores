@@ -16,7 +16,7 @@ Paulo Sonzzini Ribeiro de Souza | 10322918
 char buffer[BUFFER_SIZE] = {'\0'};
 int posicao_atual = 0;
 enum TOKEN tokens[100][100] = {-1};
-int posicoes_em_tokens[100] = {-1};
+int posicoes_em_tokens[100] = {0};
 int linha = 1;
 
 const char* token_para_string(enum TOKEN token) {

@@ -30,13 +30,15 @@ enum TOKEN getNextToken() {
             token_pos_index = 0;
 
             // // Verifica se chegou ao fim dos tokens de todas as linhas
-            // if (token_line_index >= linha) {
-            //     return TOKEN_EOS; // Retorna TOKEN_EOS se não houver mais tokens
-            // }
+            if (posicoes_em_tokens[token_line_index] == 0) {
+                token_line_index++;
+            }
         }
     } while (tokens[token_line_index][token_pos_index] == TOKEN_COMENTARIO);
 
-    return tokens[token_line_index][token_pos_index];
+    enum TOKEN token = tokens[token_line_index][token_pos_index];
+    // printf("Token a ser mandado: %d\n", token);
+    return token;
 }
 
 void consome(enum TOKEN token_esperado) {
@@ -45,7 +47,7 @@ void consome(enum TOKEN token_esperado) {
         lookahead = getNextToken();
     } else {
         printf("Erro sintatico na linha %d: esperado %s, encontrado %s\n",
-               token_line_index + 1,
+               token_line_index,
                token_para_string(token_esperado),
                token_para_string(lookahead));
         exit(1);
@@ -56,7 +58,8 @@ void programa() {
     consome(TOKEN_IDENTIFICADOR);
     consome(TOKEN_PONTO_VIRGULA);
     bloco();
-    consome(TOKEN_END);
+    //consome(TOKEN_END);
+    printf("\n----- Codigo compilado sem erros! -----");
 }
 
 void bloco() {
@@ -91,41 +94,50 @@ void lista_variavel() {
 
 void comando_composto() {
     consome(TOKEN_BEGIN);
+
+    // Processa o primeiro comando
     comando();
-    while(lookahead == TOKEN_PONTO_VIRGULA) {
+
+    // Processa comandos intermediários, exigindo PONTO_VIRGULA
+    while (lookahead == TOKEN_PONTO_VIRGULA) {
         consome(TOKEN_PONTO_VIRGULA);
-        comando();
+        if (lookahead == TOKEN_END) {
+            break; // Para o loop se encontrar END
+        }
+        comando(); // Processa o próximo comando
     }
-    consome(TOKEN_END);
+
+    // Verifica se o próximo token é END (sem exigir PONTO_VIRGULA)
+    if (lookahead != TOKEN_END) {
+        printf("Erro sintatico na linha %d: esperado END, encontrado %s\n",
+               token_line_index + 1, token_para_string(lookahead));
+        exit(1);
+    }
+
+    consome(TOKEN_END); // Consome o END ao final do bloco
 }
+
 
 void comando() {
     if (lookahead == TOKEN_READ) {
         comando_entrada();
-        return;
-    }
-    if (lookahead == TOKEN_SET) {
+    } else if (lookahead == TOKEN_SET) {
         comando_atribuicao();
-        consome(TOKEN_PONTO_VIRGULA);
-        return;
-    }
-    if (lookahead == TOKEN_IF || lookahead == TOKEN_ELIF) {
+    } else if (lookahead == TOKEN_IF || lookahead == TOKEN_ELIF) {
         comando_condicional();
-        return;
-    }
-    if (lookahead == TOKEN_WRITE) {
+    } else if (lookahead == TOKEN_WRITE) {
         comando_saida();
-        return;
-    }
-    if (lookahead == TOKEN_FOR) {
+    } else if (lookahead == TOKEN_FOR) {
         comando_repeticao();
-        return;
-    }
-    else {
+    } else if (lookahead == TOKEN_BEGIN) {
         comando_composto();
-        return;
+    } else {
+        printf("Erro sintatico na linha %d: comando inesperado %s\n",
+               token_line_index + 1, token_para_string(lookahead));
+        exit(1);
     }
 }
+
 
 void comando_atribuicao() {
     consome(TOKEN_SET);

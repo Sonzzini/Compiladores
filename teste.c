@@ -222,17 +222,20 @@ int main(int argc, char *argv[]) {
 
         eatNextChar(caractere, arquivo);
 
-        printBufferAsArray();
+        // printBufferAsArray();
 
 
-        printf("Caractere: ");
-        putchar(caractere);
-        printf("\n");
+        // printf("Caractere: ");
+        // putchar(caractere);
+        // printf("\n");
     }
 
 
-
+    printf("Tokens gerados pelo analisador lexico:\n");
     printTokens();
+    printf("\n");
+    printTokensAsNums();
+    printf("\n");
 
 
     // MARK: LOOAKHEAD
