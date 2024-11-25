@@ -16,14 +16,17 @@ Paulo Sonzzini Ribeiro de Souza | 10322918
 #include "tokens.h"
 #include "lexer.h"
 #include "syntactic.h"
+#include "semantic.h"
 
+
+// MARK: Funções Lexicas
 
 void emptyBuffer() {
     for(int i = 0; i < BUFFER_SIZE; ++i) {
         buffer[i] = '\0';
     }
     posicao_atual = 0;
-    printf("----------- ESVAZIANDO BUFFER -----------\n");
+    // printf("----------- ESVAZIANDO BUFFER -----------\n");
 }
 
 void printBuffer() {
@@ -80,12 +83,26 @@ void eatNextChar(const char c, FILE *arquivo) {
     */
     if ((c == ' ' || c == ';' || c == '\n' || c == '(' || c == ')' || c == '[' || c == ']' || c == '.' || c == ',' || c == ':' || c == ';') && (posicao_atual != 0)) {
         enum TOKEN token = recognize_token(buffer);
+        if (token == TOKEN_BEGIN) {
+            is_declaring_symbols = 0;
+        }
+        if (is_declaring_symbols && token == TOKEN_IDENTIFICADOR) {
+            addSymbol(buffer, last_type_token, 0);
+        }
+        if (token == TOKEN_INTEGER || token == TOKEN_BOOLEAN) {
+            last_type_token = token;
+        }
+        if (!is_declaring_symbols && token == TOKEN_IDENTIFICADOR) {
+            int index = findSymbolIndex(buffer);
+            printf("%-10s %d\n", buffer, index);
+        }
+        
         if (token == -1) { // token_erro
             printf("Erro encontrado na linha %d", linha);
             // Parar o programa
             exit(1);
         }
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
         emptyBuffer();
@@ -94,21 +111,21 @@ void eatNextChar(const char c, FILE *arquivo) {
         enum TOKEN token = TOKEN_ABRE_PARENTESES;
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         emptyBuffer();
     }
     if (c == ')') {
         enum TOKEN token = TOKEN_FECHA_PARENTESES;
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         emptyBuffer();
     }
 
     if (c == '#') {
         while ((fgetc(arquivo)) != '\n'); 
         enum TOKEN token = TOKEN_COMENTARIO;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
         linha++;  // Passa para a próxima linha
@@ -117,7 +134,7 @@ void eatNextChar(const char c, FILE *arquivo) {
 
     if (c == ';') {
         enum TOKEN token = TOKEN_PONTO_VIRGULA;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
         emptyBuffer();
@@ -129,7 +146,7 @@ void eatNextChar(const char c, FILE *arquivo) {
 
     if (c == ',') {
         enum TOKEN token = TOKEN_VIRGULA;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
         emptyBuffer();
@@ -137,7 +154,7 @@ void eatNextChar(const char c, FILE *arquivo) {
 
     if (c == ':') {
         enum TOKEN token = TOKEN_DOIS_PONTOS;
-        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
         tokens[linha][posicoes_em_tokens[linha]] = token;
         posicoes_em_tokens[linha]++;
         emptyBuffer();
@@ -162,7 +179,7 @@ void eatNextChar(const char c, FILE *arquivo) {
                         if ((fgetc(arquivo)) != '}') {
                             inside_multiline_comment = 0;
                             enum TOKEN token = TOKEN_COMENTARIO;
-                            printf("Token na linha %d: %s\n", linha, token_para_string(token));
+                            // printf("Token na linha %d: %s\n", linha, token_para_string(token));
                             tokens[linha][posicoes_em_tokens[linha]] = token;
                             posicoes_em_tokens[linha]++;
                             linha++;  // Passa para a próxima linha
@@ -172,7 +189,7 @@ void eatNextChar(const char c, FILE *arquivo) {
                         }
                     } else if (next_char == '\n') {
                         enum TOKEN token = TOKEN_COMENTARIO;
-                        printf("Token na linha %d: %s\n", linha, token_para_string(token));
+                        // printf("Token na linha %d: %s\n", linha, token_para_string(token));
                         tokens[linha][posicoes_em_tokens[linha]] = token;
                         posicoes_em_tokens[linha]++;
                         linha++;  // Passa para a próxima linha
@@ -222,12 +239,12 @@ int main(int argc, char *argv[]) {
 
         eatNextChar(caractere, arquivo);
 
-        printBufferAsArray();
+        // printBufferAsArray();
 
 
-        printf("Caractere: ");
-        putchar(caractere);
-        printf("\n");
+        // printf("Caractere: ");
+        // putchar(caractere);
+        // printf("\n");
     }
 
 
@@ -243,6 +260,8 @@ int main(int argc, char *argv[]) {
     //     printf("%s\n", token_para_string(lookahead));
     //     lookahead = getNextToken();
     // }
+
+    printSymbolTable();
 
     programa();
     
